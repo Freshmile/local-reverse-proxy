@@ -1,0 +1,133 @@
+# Example Docker Compose file for adding new services to Traefik
+# Services get automatic TLS certificates from step-ca via ACME
+
+version: '3.8'
+
+services:
+  # Example 1: Simple web application
+  whoami:
+    image: traefik/whoami:latest
+    container_name: whoami-example
+    networks:
+      - traefik_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_network"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.localhost`)"
+      - "traefik.http.routers.whoami.entrypoints=websecure"
+      - "traefik.http.routers.whoami.tls.certresolver=stepca"
+      - "traefik.http.services.whoami.loadbalancer.server.port=80"
+
+  # Example 2: API with path prefix
+  api-example:
+    image: nginx:alpine
+    container_name: api-example
+    networks:
+      - traefik_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_network"
+      - "traefik.http.routers.api.rule=Host(`api.localhost`) && PathPrefix(`/v1`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.tls.certresolver=stepca"
+      - "traefik.http.services.api.loadbalancer.server.port=80"
+
+  # Example 3: Service with custom TLS options (strict TLS 1.3)
+  secure-app:
+    image: nginx:alpine
+    container_name: secure-app
+    networks:
+      - traefik_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_network"
+      - "traefik.http.routers.secure.rule=Host(`secure.localhost`)"
+      - "traefik.http.routers.secure.entrypoints=websecure"
+      - "traefik.http.routers.secure.tls.certresolver=stepca"
+      - "traefik.http.routers.secure.tls.options=modern@file"  # Use strict TLS 1.3
+      - "traefik.http.services.secure.loadbalancer.server.port=80"
+
+  # Example 4: Service with multiple domains
+  multi-domain-app:
+    image: nginx:alpine
+    container_name: multi-domain-app
+    networks:
+      - traefik_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_network"
+      - "traefik.http.routers.multi.rule=Host(`app1.localhost`) || Host(`app2.localhost`)"
+      - "traefik.http.routers.multi.entrypoints=websecure"
+      - "traefik.http.routers.multi.tls.certresolver=stepca"
+      - "traefik.http.services.multi.loadbalancer.server.port=80"
+
+  # Example 5: Service with health check
+  monitored-app:
+    image: nginx:alpine
+    container_name: monitored-app
+    networks:
+      - traefik_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_network"
+      - "traefik.http.routers.monitored.rule=Host(`monitored.localhost`)"
+      - "traefik.http.routers.monitored.entrypoints=websecure"
+      - "traefik.http.routers.monitored.tls.certresolver=stepca"
+      - "traefik.http.services.monitored.loadbalancer.server.port=80"
+      - "traefik.http.services.monitored.loadbalancer.healthcheck.path=/health"
+      - "traefik.http.services.monitored.loadbalancer.healthcheck.interval=10s"
+
+  # Example 6: Service with path-based routing and strip prefix
+  app-with-prefix:
+    image: nginx:alpine
+    container_name: app-with-prefix
+    networks:
+      - traefik_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_network"
+      - "traefik.http.routers.prefixed.rule=Host(`app.localhost`) && PathPrefix(`/admin`)"
+      - "traefik.http.routers.prefixed.entrypoints=websecure"
+      - "traefik.http.routers.prefixed.tls.certresolver=stepca"
+      - "traefik.http.routers.prefixed.middlewares=strip-admin"
+      - "traefik.http.services.prefixed.loadbalancer.server.port=80"
+      # Strip /admin prefix before forwarding to backend
+      - "traefik.http.middlewares.strip-admin.stripprefix.prefixes=/admin"
+
+networks:
+  traefik_network:
+    external: true
+
+# Usage Instructions:
+# ==================
+#
+# 1. Choose the example(s) you want to use
+# 2. Customize the domain names and settings as needed
+# 3. Start the services:
+#    docker compose -f examples/example-service.yml up -d
+#
+# 4. Access your services (certificates are generated automatically!):
+#    - https://whoami.localhost
+#    - https://api.localhost/v1
+#    - https://secure.localhost
+#    - https://app1.localhost (or app2.localhost)
+#    - https://monitored.localhost
+#    - https://app.localhost/admin
+#
+# 5. View in Traefik dashboard:
+#    http://traefik.localhost:8080/dashboard/
+#
+# Tips:
+# - All services must be on the 'traefik_network' network
+# - Set 'traefik.enable=true' to expose the service
+# - Specify the internal port with 'traefik.http.services.NAME.loadbalancer.server.port'
+# - Use 'entrypoints=websecure' for HTTPS
+# - Use 'tls.certresolver=stepca' to get automatic certificates from step-ca
+# - The *.localhost domain resolves automatically to 127.0.0.1 on modern browsers
+# - For inter-container communication, use network aliases on traefik_network

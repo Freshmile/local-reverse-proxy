@@ -1,0 +1,27 @@
+# Certificates (sensitive)
+certs/
+
+# ACME certificate storage
+traefik/acme/
+
+# Logs
+traefik/logs/
+*.log
+
+# Docker volumes data
+volumes/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Temporary files
+tmp/
+temp/
