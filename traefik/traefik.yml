@@ -1,0 +1,65 @@
+# Traefik Static Configuration
+# This file defines the Traefik instance configuration
+
+# API and Dashboard
+api:
+  dashboard: true
+  insecure: true  # Enable insecure mode for local development
+
+# Entry Points
+entryPoints:
+  web:
+    address: ":80"
+    # Redirect HTTP to HTTPS
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: ":443"
+    # TLS configuration will be loaded from dynamic configuration
+
+  traefik:
+    address: ":8080"  # Dashboard port
+
+# Certificate Resolvers (ACME with step-ca)
+certificatesResolvers:
+  stepca:
+    acme:
+      caServer: "https://host.docker.internal:9000/acme/acme/directory"
+      email: "admin@localhost"
+      storage: "/etc/traefik/acme/acme.json"
+      tlsChallenge: {}
+
+# Providers
+providers:
+  # Docker provider for automatic service discovery
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false  # Services must opt-in with label
+    watch: true  # Watch for Docker events
+
+  # File provider for dynamic configuration
+  file:
+    directory: "/etc/traefik/dynamic"
+    watch: true  # Watch for file changes
+
+# Logging
+log:
+  level: INFO  # DEBUG, INFO, WARN, ERROR, FATAL, PANIC
+  filePath: "/var/log/traefik/traefik.log"
+  format: json  # json or common
+
+# Access Logs
+accessLog:
+  filePath: "/var/log/traefik/access.log"
+  format: json
+  bufferingSize: 100
+
+# Global
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false

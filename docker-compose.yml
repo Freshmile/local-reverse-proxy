@@ -1,0 +1,65 @@
+services:
+  # Step-CA - Local ACME Certificate Authority
+  step-ca:
+    image: smallstep/step-ca:latest
+    container_name: step-ca
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - DOCKER_STEPCA_INIT_NAME=Local Dev CA
+      - DOCKER_STEPCA_INIT_DNS_NAMES=localhost,host.docker.internal
+      - DOCKER_STEPCA_INIT_ACME=true
+    volumes:
+      - step-ca-data:/home/step
+    healthcheck:
+      test: ["CMD", "step", "ca", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Traefik Reverse Proxy
+  traefik:
+    image: traefik:v3.2
+    container_name: traefik
+    restart: unless-stopped
+    depends_on:
+      step-ca:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "80:80"      # HTTP
+      - "443:443"    # HTTPS
+      - "8080:8080"  # Dashboard
+    volumes:
+      # Docker socket for service discovery
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Static configuration
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      # Dynamic configuration
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      # ACME storage
+      - ./traefik/acme:/etc/traefik/acme
+      # step-ca certificates (for CA trust)
+      - step-ca-data:/step-ca-certs:ro
+      # Logs
+      - ./traefik/logs:/var/log/traefik
+    environment:
+      - TZ=UTC
+      # Trust step-ca root certificate
+      - LEGO_CA_CERTIFICATES=/step-ca-certs/certs/root_ca.crt
+    networks:
+      - traefik_network
+    labels:
+      - "traefik.enable=true"
+
+# Volumes
+volumes:
+  step-ca-data:
+
+# Networks
+networks:
+  traefik_network:
+    name: traefik_network
+    driver: bridge

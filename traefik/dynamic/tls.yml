@@ -1,0 +1,23 @@
+# Traefik Dynamic TLS Configuration
+# Certificates are now managed automatically by step-ca via ACME
+# This file defines TLS options only
+
+tls:
+  # TLS Options for modern security
+  options:
+    default:
+      minVersion: VersionTLS12
+      cipherSuites:
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+        - TLS_AES_128_GCM_SHA256
+        - TLS_AES_256_GCM_SHA384
+        - TLS_CHACHA20_POLY1305_SHA256
+      sniStrict: false  # Allow connections without SNI
+      preferServerCipherSuites: true
+
+    # Strict TLS 1.3 only option (for services requiring highest security)
+    modern:
+      minVersion: VersionTLS13
+      sniStrict: true
