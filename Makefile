@@ -1,4 +1,4 @@
-.PHONY: help setup start stop restart logs status install-ca clean
+.PHONY: help setup start stop restart logs status install-ca clean labels
 
 # Colors for output
 GREEN := \033[0;32m
@@ -104,3 +104,6 @@ clean: ## Remove all containers, volumes, and certificates
 check-docker: ## Check if Docker is installed and running
 	@command -v docker >/dev/null 2>&1 || { echo "$(RED)Error: Docker is not installed$(NC)"; exit 1; }
 	@docker info >/dev/null 2>&1 || { echo "$(RED)Error: Docker daemon is not running$(NC)"; exit 1; }
+
+labels: ## Generate Traefik labels for a new service
+	@./scripts/generate-labels.sh
