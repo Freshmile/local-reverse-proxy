@@ -11,6 +11,7 @@ This is a Traefik reverse proxy configuration for local HTTPS development with *
 ## Common Commands
 
 ```bash
+make help          # Show available Make targets
 make setup         # Complete first-time setup (starts containers, installs CA)
 make start         # Start Traefik and step-ca containers
 make stop          # Stop all containers
@@ -19,6 +20,7 @@ make logs          # Stream Traefik logs (follow mode)
 make logs-ca       # Stream step-ca logs (follow mode)
 make status        # Check container status and CA certificate presence
 make install-ca    # Install CA certificate in system trust store
+make labels        # Generate Traefik labels interactively for a new service
 make clean         # Remove containers, volumes, and certificates (prompts for confirmation)
 ```
 
@@ -59,6 +61,7 @@ Browser accepts (CA installed in trust store)
 - `traefik/dynamic/tls.yml` - Dynamic TLS options (cipher suites, TLS versions)
 - `traefik/acme/acme.json` - ACME certificate storage (auto-generated)
 - `scripts/install-ca.sh` - Installs CA certificate in browser trust stores (Chrome, Firefox)
+- `scripts/generate-labels.sh` - Interactive script to generate Traefik labels for a new service
 
 **Certificate system:**
 - CA cert: `certs/root_ca.crt` (extracted from step-ca, must be installed in browser)

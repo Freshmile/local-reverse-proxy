@@ -1,8 +1,6 @@
 # Example Docker Compose file for adding new services to Traefik
 # Services get automatic TLS certificates from step-ca via ACME
 
-version: '3.8'
-
 services:
   # Example 1: Simple web application
   whoami:

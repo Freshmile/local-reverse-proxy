@@ -1,4 +1,4 @@
-.PHONY: help setup start stop restart logs status install-ca clean labels
+.PHONY: help setup start stop restart logs status install-ca clean labels check-docker
 
 # Colors for output
 GREEN := \033[0;32m
@@ -91,7 +91,7 @@ install-ca: ## Install CA certificate in browser trust stores
 
 clean: ## Remove all containers, volumes, and certificates
 	@echo "$(RED)WARNING: This will remove all containers, volumes, and certificates!$(NC)"
-	@echo -n "$(YELLOW)Are you sure? [y/N] $(NC)" && read ans && [ $${ans:-N} = y ]
+	@echo -n "$(YELLOW)Are you sure? [y/N] $(NC)" && read ans && echo "$$ans" | grep -iq '^y$$'
 	@echo "$(YELLOW)Stopping containers...$(NC)"
 	@docker compose down -v
 	@echo "$(YELLOW)Removing certificates...$(NC)"

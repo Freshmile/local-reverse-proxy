@@ -114,6 +114,7 @@ make logs          # Afficher les logs Traefik en temps réel
 make logs-ca       # Afficher les logs step-ca en temps réel
 make status        # Afficher l'état des services
 make install-ca    # Installer le certificat CA
+make labels        # Générer les labels Traefik pour un nouveau service
 make clean         # Tout supprimer (containers, volumes, certificats)
 ```
 
@@ -124,8 +125,6 @@ make clean         # Tout supprimer (containers, volumes, certificats)
 Créez un fichier `docker-compose.override.yml` ou ajoutez à votre projet:
 
 ```yaml
-version: '3.8'
-
 services:
   mon-app:
     image: nginx:alpine
@@ -185,7 +184,8 @@ docker run -d \
 ├── certs/
 │   └── root_ca.crt                 # Certificat CA (à importer!)
 ├── scripts/
-│   └── install-ca.sh               # Installation CA dans les navigateurs
+│   ├── install-ca.sh               # Installation CA dans les navigateurs
+│   └── generate-labels.sh          # Génération interactive de labels Traefik
 └── examples/
     └── example-service.yml         # Templates services exemples
 ```
