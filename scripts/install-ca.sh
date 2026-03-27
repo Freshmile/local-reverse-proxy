@@ -72,7 +72,12 @@ install_firefox_linux() {
 
 # Install in macOS system keychain (Chrome/Safari)
 install_macos_system() {
-    sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "$CERT_PATH"
+    echo -e "${YELLOW}Installing in macOS System Keychain (requires sudo)...${NC}"
+    sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "$CERT_PATH" || {
+        echo -e "${RED}Error: Failed to install certificate in macOS Keychain.${NC}"
+        echo -e "${YELLOW}You can install it manually: sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain $CERT_PATH${NC}"
+        return 1
+    }
     echo -e "${GREEN}✓ Installed in macOS System Keychain (Chrome/Safari)${NC}"
 }
 

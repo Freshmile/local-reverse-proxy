@@ -12,7 +12,7 @@ services:
     volumes:
       - step-ca-data:/home/step
     healthcheck:
-      test: ["CMD", "step", "ca", "health"]
+      test: ["CMD", "step", "ca", "health", "--ca-url", "https://localhost:9000"]
       interval: 10s
       timeout: 5s
       retries: 5
