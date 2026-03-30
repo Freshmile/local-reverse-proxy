@@ -4,7 +4,6 @@
 # API and Dashboard
 api:
   dashboard: true
-  insecure: true  # Enable insecure mode for local development
 
 # Entry Points
 entryPoints:
@@ -21,9 +20,6 @@ entryPoints:
   websecure:
     address: ":443"
     # TLS configuration will be loaded from dynamic configuration
-
-  traefik:
-    address: ":8080"  # Dashboard port
 
 # Certificate Resolvers (ACME with step-ca)
 certificatesResolvers:

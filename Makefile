@@ -38,7 +38,7 @@ setup: ## Complete setup (start containers, install CA)
 	@$(MAKE) -s install-ca
 	@echo ""
 	@echo "$(GREEN)Setup complete!$(NC)"
-	@echo "$(YELLOW)Dashboard:$(NC) http://traefik.localhost:8080/dashboard/"
+	@echo "$(YELLOW)Dashboard:$(NC) https://traefik.localhost"
 
 start: ## Start Traefik and step-ca containers
 	@echo "$(GREEN)Starting Traefik with step-ca...$(NC)"
@@ -75,7 +75,7 @@ status: ## Show status of containers
 	fi
 	@if docker compose ps | grep -q "traefik.*Up"; then \
 		echo "$(GREEN)✓ Traefik is running$(NC)"; \
-		echo "$(GREEN)✓ Dashboard: http://traefik.localhost:8080/dashboard/$(NC)"; \
+		echo "$(GREEN)✓ Dashboard: https://traefik.localhost$(NC)"; \
 	else \
 		echo "$(RED)✗ Traefik is not running$(NC)"; \
 		echo "$(YELLOW)Run 'make start' to start Traefik$(NC)"; \
