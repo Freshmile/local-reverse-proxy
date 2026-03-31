@@ -31,7 +31,6 @@ services:
     ports:
       - "80:80"      # HTTP
       - "443:443"    # HTTPS
-      - "8080:8080"  # Dashboard
     volumes:
       # Docker socket for service discovery
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -53,6 +52,12 @@ services:
       - traefik_network
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=traefik_network"
+      # Dashboard router
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dashboard.tls.certresolver=stepca"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
 
 # Volumes
 volumes:

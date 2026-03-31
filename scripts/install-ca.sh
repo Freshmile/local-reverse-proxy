@@ -28,7 +28,7 @@ extract_cert() {
 install_chrome_linux() {
     if ! command -v certutil &>/dev/null; then
         echo -e "${YELLOW}certutil not found. Install with: sudo apt-get install libnss3-tools${NC}"
-        return 1
+        return 0
     fi
 
     local nssdb="$HOME/.pki/nssdb"
@@ -48,7 +48,7 @@ install_chrome_linux() {
 install_firefox_linux() {
     if ! command -v certutil &>/dev/null; then
         echo -e "${YELLOW}certutil not found. Install with: sudo apt-get install libnss3-tools${NC}"
-        return 1
+        return 0
     fi
 
     local found=0
@@ -84,8 +84,14 @@ install_macos_system() {
 # Install in Firefox profiles (macOS)
 install_firefox_macos() {
     if ! command -v certutil &>/dev/null; then
-        echo -e "${YELLOW}certutil not found. Install with: brew install nss${NC}"
-        return 1
+        if command -v brew &>/dev/null; then
+            echo -e "${YELLOW}certutil not found. Installing nss via Homebrew...${NC}"
+            brew install nss || { echo -e "${YELLOW}Failed to install nss. Firefox support skipped.${NC}"; return 0; }
+        else
+            echo -e "${YELLOW}certutil not found and Homebrew is not installed. Firefox support skipped.${NC}"
+            echo -e "${YELLOW}To add Firefox support later: install Homebrew, then run 'brew install nss && make install-ca'${NC}"
+            return 0
+        fi
     fi
 
     local found=0
@@ -135,7 +141,9 @@ main() {
             ;;
         Darwin)
             echo -e "${GREEN}Installing on macOS...${NC}"
-            install_macos_system
+            if ! install_macos_system; then
+                echo -e "${YELLOW}macOS Keychain failed. Continuing with Firefox...${NC}"
+            fi
             install_firefox_macos
             ;;
         MINGW*|MSYS*|CYGWIN*)

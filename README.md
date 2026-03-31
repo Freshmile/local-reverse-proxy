@@ -44,9 +44,16 @@ make setup
 
 Cette commande va:
 1. Démarrer step-ca et Traefik (avec dépendance healthcheck)
-2. Extraire et installer le certificat CA
+2. Extraire et installer le certificat CA automatiquement
 
-Accédez ensuite au dashboard: **http://traefik.localhost:8080/dashboard/**
+Accédez ensuite au dashboard: **https://traefik.localhost**
+
+Pour tester rapidement avec le service `whoami` inclus dans les exemples:
+
+```bash
+docker compose -f examples/example-service.yml up -d whoami
+# https://whoami.localhost
+```
 
 ### Option 2: Manuel
 
@@ -58,12 +65,14 @@ docker compose up -d
 make install-ca
 
 # 3. Accéder au dashboard
-# http://traefik.localhost:8080/dashboard/
+# https://traefik.localhost
 ```
 
 ## Installation du Certificat CA
 
 Le certificat CA doit être importé **une seule fois** dans votre système pour que tous les services HTTPS soient approuvés.
+
+> **Note:** `make setup` exécute automatiquement `make install-ca`. Cette étape n'est nécessaire manuellement que si vous avez utilisé `make start` au lieu de `make setup`, ou pour réinstaller le certificat (nouveau profil Firefox, nouvelle machine, etc.).
 
 ### Installation Automatique (Recommandé)
 
@@ -297,7 +306,7 @@ Voir `examples/example-service.yml` pour plus d'exemples complets.
 ### Impossible d'accéder au service
 
 1. Vérifiez que Traefik est démarré: `make status`
-2. Testez avec curl: `curl -I http://traefik.localhost:8080/dashboard/`
+2. Testez avec curl: `curl -Ik https://traefik.localhost`
 3. Vérifiez le dashboard Traefik pour voir si le router est configuré
 4. Consultez les logs du service: `docker compose logs nom-du-service`
 

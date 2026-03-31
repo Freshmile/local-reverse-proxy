@@ -119,7 +119,7 @@ networks:
 #    - https://app.localhost/admin
 #
 # 5. View in Traefik dashboard:
-#    http://traefik.localhost:8080/dashboard/
+#    https://traefik.localhost
 #
 # Tips:
 # - All services must be on the 'traefik_network' network
