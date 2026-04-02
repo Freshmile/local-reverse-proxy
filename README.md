@@ -113,18 +113,30 @@ Import-Certificate -FilePath ".\certs\root_ca.crt" -CertStoreLocation Cert:\Loca
 
 ## Commandes Make Disponibles
 
+### Reverse Proxy (Traefik + step-ca)
+
 ```bash
 make help          # Afficher l'aide
 make setup         # Setup complet (recommandé pour premier démarrage)
 make start         # Démarrer Traefik et step-ca
-make stop          # Arrêter tous les containers
-make restart       # Redémarrer tous les containers
+make stop          # Arrêter Traefik et step-ca
+make restart       # Redémarrer Traefik et step-ca
 make logs          # Afficher les logs Traefik en temps réel
 make logs-ca       # Afficher les logs step-ca en temps réel
 make status        # Afficher l'état des services
 make install-ca    # Installer le certificat CA
 make labels        # Générer les labels Traefik pour un nouveau service
 make clean         # Tout supprimer (containers, volumes, certificats)
+```
+
+### Infrastructure (MySQL, Redis, Kafka, Elasticsearch...)
+
+```bash
+make infra-up      # Démarrer les services d'infrastructure
+make infra-down    # Arrêter les services d'infrastructure
+make infra-logs    # Afficher les logs infra en temps réel
+make tools-up      # Démarrer les outils optionnels (phpMyAdmin, Mailhog, Kibana)
+make tools-down    # Arrêter les outils optionnels
 ```
 
 ## Ajouter un Nouveau Service
@@ -179,10 +191,16 @@ docker run -d \
 
 ```
 .
-├── Makefile                        # Automatisation multi-OS
-├── docker-compose.yml              # Orchestration Docker (Traefik + step-ca)
+├── Makefile                        # Point d'entrée Make (inclut proxy + infra)
+├── Makefile.proxy                  # Targets Traefik et step-ca
+├── Makefile.infra                  # Targets services d'infrastructure
+├── docker-compose.yml              # Orchestration Traefik + step-ca
+├── infra-compose.yml               # Orchestration infrastructure (MySQL, Redis, Kafka...)
 ├── .gitignore                      # Fichiers à ignorer
 ├── README.md                       # Ce fichier
+├── config/
+│   └── mysql/
+│       └── mysql.cnf               # Configuration MySQL
 ├── traefik/
 │   ├── traefik.yml                 # Configuration statique
 │   ├── acme/                       # Stockage certificats ACME
@@ -346,7 +364,8 @@ make setup
 **Architecture réseau Docker:**
 - `step-ca` tourne avec `network_mode: host` pour pouvoir valider les challenges ACME TLS sur `*.localhost`
 - `traefik` se connecte à step-ca via `host.docker.internal:9000`
-- Les services utilisent le réseau bridge `traefik_network`
+- Les services exposés via Traefik utilisent le réseau bridge `traefik_network`
+- Les services d'infrastructure (MySQL, Redis, Kafka...) et les applications métier utilisent le réseau bridge `freshmile_world` (créé par `infra-compose.yml`)
 
 ## Notes de Sécurité
 
