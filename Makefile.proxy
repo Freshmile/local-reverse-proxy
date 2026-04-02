@@ -1,4 +1,4 @@
-.PHONY: setup start stop restart logs logs-ca status install-ca clean labels check-docker
+.PHONY: setup proxy-start stop restart logs logs-ca status install-ca clean labels check-docker
 
 setup: ## Complete setup (start containers, install CA)
 	@echo "$(GREEN)Starting step-ca and Traefik...$(NC)"
@@ -9,7 +9,7 @@ setup: ## Complete setup (start containers, install CA)
 	@echo "$(GREEN)Setup complete!$(NC)"
 	@echo "$(YELLOW)Dashboard:$(NC) https://traefik.localhost"
 
-start: ## Start Traefik and step-ca containers
+proxy-start: ## Start Traefik and step-ca containers
 	@echo "$(GREEN)Starting Traefik with step-ca...$(NC)"
 	@$(MAKE) -s check-docker
 	@docker compose up -d
