@@ -1,0 +1,55 @@
+# 
+# Configuration file for MySQL 8.0
+# It must exists in the /etc/mysql/conf.d directory
+#
+
+[mysqld]
+
+#
+# Character sets
+#
+# Default is Latin1, if you need UTF-8 set all this (also in client section)
+#
+character-set-server = utf8mb4
+
+#
+# InnoDB buffer pool
+#
+# make sure it does eat-up all of the computer RAM
+innodb_buffer_pool_instances = 1
+innodb_buffer_pool_size = 2G
+
+
+#
+# Logs
+# 
+
+# disable binary logs (save space on disks)
+# only when binary logs are enabled, the ones existing can be purged with the "purge binary logs before now()" statement
+skip-log-bin
+
+
+# log to the table mysql.slow_log
+log_output = TABLE
+
+# Slow queries log
+
+# default = 0 = disable
+slow_query_log = 1
+
+# in seconds, default = 10
+long_query_time = 2
+
+min_examined_row_limit = 250
+log_queries_not_using_indexes = 1
+
+
+# this is the value on Scalingo servers
+# also the default value in Mysql8+, where it is deprecated
+# See https://dev.mysql.com/doc/refman/8.0/en/timestamp-initialization.html
+explicit_defaults_for_timestamp = 1
+
+
+[client]
+# Default is Latin1, if you need UTF-8 set this (also in server section)
+default-character-set = utf8mb4
