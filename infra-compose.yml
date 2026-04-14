@@ -98,29 +98,17 @@ services:
     profiles:
       - phpmyadmin
       - tools
-    networks:
-      - default
-    ports:
-      - ${PHPMYADMIN_WEB_PORT:-8033}:80
     restart: unless-stopped
-
-  mailhog:
-    container_name: freshmile-mailhog
-    image: mailhog/mailhog:latest
-    environment:
-      MH_STORAGE: maildir
-      MH_MAILDIR_PATH: /home/mailhog
     networks:
+      - traefik_network
       - default
-    profiles:
-      - mailhog
-      - tools
-    ports:
-      - '${MAILHOG_PORT:-1025}:1025'
-      - '${MAILHOG_DASHBOARD_PORT:-8025}:8025'
-    restart: unless-stopped
-    volumes:
-      - ${MAILHOG_DIR:-~/.mailhog-emails}:/home/mailhog
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.phpmyadmin.rule=Host(`phpmyadmin.localhost`)"
+      - "traefik.http.routers.phpmyadmin.entrypoints=websecure"
+      - "traefik.docker.network=traefik_network"
+      - "traefik.http.services.phpmyadmin.loadbalancer.server.port=80"
+      - "traefik.http.routers.phpmyadmin.tls.certresolver=stepca"
 
   elasticsearch:
     container_name: freshmile-elasticsearch
@@ -148,7 +136,13 @@ services:
       - tools
     environment:
       XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: d1a66dfd-c4d3-4a0a-8290-2abcb83ab3aa
-    ports:
-      - 5601:5601
     networks:
+      - traefik_network
       - default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kibana.rule=Host(`kibana.localhost`)"
+      - "traefik.http.routers.kibana.entrypoints=websecure"
+      - "traefik.docker.network=traefik_network"
+      - "traefik.http.services.kibana.loadbalancer.server.port=5601"
+      - "traefik.http.routers.kibana.tls.certresolver=stepca"
