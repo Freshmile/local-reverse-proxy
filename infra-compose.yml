@@ -8,6 +8,7 @@ networks:
 
 volumes:
   mysql_data:
+  mongodb_data:
   redis_data:
   broker_data:
   elasticsearch_data:
@@ -73,6 +74,19 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./config/mysql/mysql.cnf:/etc/mysql/conf.d/zz-freshmile.cnf
+
+  mongodb:
+    image: mongo:8.0
+    container_name: freshmile-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27018:27017"
+    networks:
+      - default
 
   redis:
     container_name: freshmile-redis
