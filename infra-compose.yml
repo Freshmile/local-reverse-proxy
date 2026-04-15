@@ -1,0 +1,162 @@
+name: freshmile-infra
+
+networks:
+  default:
+    name: freshmile_world
+  traefik_network:
+    external: true
+
+volumes:
+  mysql_data:
+  mongodb_data:
+  redis_data:
+  broker_data:
+  elasticsearch_data:
+
+services:
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+#    ports: [ "8080:8080" ]
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: broker:9092
+    depends_on:
+      - broker
+    networks:
+      - traefik_network
+      - default
+    labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.kafka.rule=Host(`kafka.localhost`)"
+        - "traefik.http.routers.kafka.entrypoints=websecure"
+        - "traefik.docker.network=traefik_network"
+        - "traefik.http.services.kafka.loadbalancer.server.port=8080"
+        - "traefik.http.routers.kafka.tls.certresolver=stepca"
+  broker:
+    image: apache/kafka:latest
+    container_name: freshmile-broker
+    networks:
+      - default
+    expose:
+      - 9093
+      - 9092
+    volumes:
+      - broker_data:/var/lib/kafka/data
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://broker:9092,CONTROLLER://broker:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_CONSUMER_PARTITION_ASSIGNMENT_STRATEGY: org.apache.kafka.clients.consumer.RoundRobinAssignor
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+
+  mysql:
+    container_name: freshmile-mysql
+    image: mysql:${MYSQL_DOCKER_IMAGE_TAG:-8.0}
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --max-allowed-packet=512M
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    networks:
+      - default
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    restart: unless-stopped
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./config/mysql/mysql.cnf:/etc/mysql/conf.d/zz-freshmile.cnf
+
+  mongodb:
+    image: mongo:8.0
+    container_name: freshmile-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27018:27017"
+    networks:
+      - default
+
+  redis:
+    container_name: freshmile-redis
+    image: redis:${REDIS_DOCKER_IMAGE_TAG:-6.2}
+    networks:
+      - default
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  # Optional services
+  phpmyadmin:
+    container_name: freshmile-phpmyadmin
+    image: phpmyadmin:latest
+    depends_on:
+      - mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      PMA_HOST: mysql
+      UPLOAD_LIMIT: 5G
+    profiles:
+      - phpmyadmin
+      - tools
+    restart: unless-stopped
+    networks:
+      - traefik_network
+      - default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.phpmyadmin.rule=Host(`phpmyadmin.localhost`)"
+      - "traefik.http.routers.phpmyadmin.entrypoints=websecure"
+      - "traefik.docker.network=traefik_network"
+      - "traefik.http.services.phpmyadmin.loadbalancer.server.port=80"
+      - "traefik.http.routers.phpmyadmin.tls.certresolver=stepca"
+
+  elasticsearch:
+    container_name: freshmile-elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    environment: [
+      'ES_JAVA_OPTS=-Xms1g -Xmx1g',
+      'discovery.type=single-node',
+      'xpack.security.enabled=false',
+      'xpack.security.enrollment.enabled=false',
+      'cluster.routing.allocation.disk.threshold_enabled=false'
+    ]
+    ports:
+      - 9200:9200
+    networks:
+      - default
+    restart: unless-stopped
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: freshmile-kibana
+    profiles:
+      - kibana
+      - tools
+    environment:
+      XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: d1a66dfd-c4d3-4a0a-8290-2abcb83ab3aa
+    networks:
+      - traefik_network
+      - default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kibana.rule=Host(`kibana.localhost`)"
+      - "traefik.http.routers.kibana.entrypoints=websecure"
+      - "traefik.docker.network=traefik_network"
+      - "traefik.http.services.kibana.loadbalancer.server.port=5601"
+      - "traefik.http.routers.kibana.tls.certresolver=stepca"

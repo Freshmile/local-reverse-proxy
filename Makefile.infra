@@ -1,0 +1,24 @@
+.PHONY: infra-up infra-down infra-logs tools-up tools-down
+
+infra-up: ## Start infrastructure services (mysql, redis, broker, elasticsearch...)
+	@echo "$(GREEN)Starting infrastructure services...$(NC)"
+	@docker compose -f infra-compose.yml up -d
+	@echo "$(GREEN)Infrastructure services started!$(NC)"
+
+infra-down: tools-down ## Stop infrastructure services
+	@echo "$(YELLOW)Stopping infrastructure services...$(NC)"
+	@docker compose -f infra-compose.yml down
+	@echo "$(GREEN)Infrastructure services stopped$(NC)"
+
+infra-logs: ## Show infrastructure services logs (follow mode)
+	@docker compose -f infra-compose.yml logs -f
+
+tools-up: infra-up ## Start tools services (phpmyadmin, mailhog, kibana)
+	@echo "$(GREEN)Starting tools services...$(NC)"
+	@docker compose -f infra-compose.yml --profile tools up -d
+	@echo "$(GREEN)Tools services started!$(NC)"
+
+tools-down: ## Stop tools services
+	@echo "$(YELLOW)Stopping tools services...$(NC)"
+	@docker compose -f infra-compose.yml --profile tools down
+	@echo "$(GREEN)Tools services stopped$(NC)"
