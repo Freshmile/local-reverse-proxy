@@ -247,6 +247,57 @@ else
     skip "ACME directory check skipped (host.docker.internal not resolvable)"
 fi
 
+# ─── 7. TLS challenge: step-ca → Traefik (ACME validation) ───────────────────
+section "TLS challenge (step-ca → Traefik)"
+
+# 7a. DNS resolution of *.localhost from step-ca
+# step-ca needs to resolve *.localhost to reach Traefik for TLS-ALPN-01 validation
+TEST_DOMAIN="test-diagnose.localhost"
+
+STEPCA_RESOLVE=$(docker exec step-ca getent hosts "$TEST_DOMAIN" 2>/dev/null | awk '{print $1}' || true)
+
+if [ -n "$STEPCA_RESOLVE" ]; then
+    ok "$TEST_DOMAIN resolves to $STEPCA_RESOLVE from step-ca"
+else
+    # Try with nslookup/dig as fallback
+    STEPCA_RESOLVE=$(docker exec step-ca sh -c "nslookup $TEST_DOMAIN 2>/dev/null | grep -A1 'Name:' | grep 'Address:' | awk '{print \$2}'" 2>/dev/null || true)
+    if [ -n "$STEPCA_RESOLVE" ]; then
+        ok "$TEST_DOMAIN resolves to $STEPCA_RESOLVE from step-ca (via nslookup)"
+    else
+        fail "*.localhost does not resolve from step-ca container" \
+            "step-ca must resolve *.localhost to validate TLS-ALPN-01 challenges." \
+            "This is likely why certificates work for cached domains but fail for new ones." \
+            "" \
+            "Cause: step-ca uses network_mode: host, and the host DNS does not resolve *.localhost." \
+            "On Docker Desktop, the internal VM may lack *.localhost DNS resolution." \
+            "" \
+            "Fix options:" \
+            "  1. Add to the host's /etc/hosts (or Docker Desktop VM):" \
+            "       127.0.0.1  my-app.localhost other-app.localhost" \
+            "  2. On Linux, ensure systemd-resolved handles .localhost:" \
+            "       resolvectl query test.localhost" \
+            "  3. Switch from tlsChallenge to httpChallenge in traefik.yml" \
+            "       (same DNS requirement, but easier to debug)"
+    fi
+fi
+
+# 7b. TCP connectivity from step-ca to Traefik on port 443 (TLS challenge callback)
+if docker exec step-ca sh -c "echo '' | timeout 3 nc -z localhost 443" &>/dev/null 2>&1; then
+    ok "step-ca can reach localhost:443 (Traefik entrypoint for TLS challenge)"
+else
+    # step-ca is on host network, try via wget
+    if docker exec step-ca wget -q --spider --timeout=3 --no-check-certificate \
+        "https://localhost:443" &>/dev/null 2>&1; then
+        ok "step-ca can reach localhost:443 (Traefik entrypoint for TLS challenge)"
+    else
+        fail "step-ca cannot reach localhost:443" \
+            "For TLS-ALPN-01, step-ca must connect to *.localhost:443 to validate the challenge." \
+            "Traefik should be listening on port 443 (mapped from the container)." \
+            "Check: docker compose ps traefik — port 443 should be mapped" \
+            "On Docker Desktop with host networking, Traefik's port 443 should be accessible from the VM."
+    fi
+fi
+
 # ─── Summary ──────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${BLUE}────────────────────────────────────────${NC}"
