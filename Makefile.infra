@@ -1,4 +1,4 @@
-.PHONY: infra-up infra-down infra-logs tools-up tools-down
+.PHONY: infra-up infra-down infra-logs infra-migrate tools-up tools-down
 
 infra-up: ## Start infrastructure services (mysql, redis, broker, elasticsearch...)
 	@echo "$(GREEN)Starting infrastructure services...$(NC)"
@@ -22,3 +22,8 @@ tools-down: ## Stop tools services
 	@echo "$(YELLOW)Stopping tools services...$(NC)"
 	@docker compose -f infra-compose.yml --profile tools down
 	@echo "$(GREEN)Tools services stopped$(NC)"
+
+infra-migrate: ## Migrate legacy Docker volumes (pulp/park/devstack) to freshmile-infra
+	@echo "$(GREEN)Migrating legacy Docker volumes...$(NC)"
+	@./scripts/migrate-volumes.sh
+	@echo "$(GREEN)Volume migration done$(NC)"
