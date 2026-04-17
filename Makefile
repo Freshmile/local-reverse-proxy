@@ -21,7 +21,7 @@ endif
 
 .PHONY: start
 
-start: infra-up proxy-start ## Start everything: infrastructure then reverse proxy
+start: proxy-start infra-up ## Start everything: infrastructure then reverse proxy
 
 # Default target
 .DEFAULT_GOAL := help
