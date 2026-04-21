@@ -39,12 +39,13 @@ Navigateur accepte (CA installée)
 
 ```bash
 # Setup complet en une seule commande
-make setup
+make start
 ```
 
 Cette commande va:
 1. Démarrer step-ca et Traefik (avec dépendance healthcheck)
 2. Extraire et installer le certificat CA automatiquement
+3. Démarrer l'infra globale
 
 Accédez ensuite au dashboard: **https://traefik.localhost**
 
@@ -72,7 +73,7 @@ make install-ca
 
 Le certificat CA doit être importé **une seule fois** dans votre système pour que tous les services HTTPS soient approuvés.
 
-> **Note:** `make setup` et `make proxy-start` exécutent automatiquement `make install-ca` (idempotent, supprime l'entrée existante avant de réinstaller). Cette étape n'est nécessaire manuellement que pour installer le certificat dans un nouveau profil Firefox ou sur une nouvelle machine.
+> **Note:** `make proxy-start` exécute automatiquement `make install-ca`. Cette étape n'est nécessaire manuellement que pour installer le certificat dans un nouveau profil Firefox ou sur une nouvelle machine.
 
 ### Installation Automatique (Recommandé)
 
@@ -117,10 +118,9 @@ Import-Certificate -FilePath ".\certs\root_ca.crt" -CertStoreLocation Cert:\Loca
 
 ```bash
 make help          # Afficher l'aide
-make setup         # Setup complet (recommandé pour premier démarrage)
-make start         # Démarrer Traefik et step-ca
-make stop          # Arrêter Traefik et step-ca
-make restart       # Redémarrer Traefik et step-ca
+make proxy-start         # Démarrer Traefik et step-ca
+make proxy-stop          # Arrêter Traefik et step-ca
+make proxy-restart       # Redémarrer Traefik et step-ca
 make logs          # Afficher les logs Traefik en temps réel
 make logs-ca       # Afficher les logs step-ca en temps réel
 make status        # Afficher l'état des services

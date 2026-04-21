@@ -20,8 +20,10 @@ else
 endif
 
 .PHONY: start
-
 start: proxy-start infra-up ## Start everything: infrastructure then reverse proxy
+
+.PHONY: stop
+stop: proxy-stop infra-down ## Stop everything: infrastructure then reverse proxy
 
 # Default target
 .DEFAULT_GOAL := help
