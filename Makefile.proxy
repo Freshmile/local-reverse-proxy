@@ -13,6 +13,7 @@ proxy-start: ## Start Traefik and step-ca containers
 	@echo "$(GREEN)Starting Traefik with step-ca...$(NC)"
 	@$(MAKE) -s check-docker
 	@docker compose up -d
+	@$(MAKE) -s install-ca
 	@echo "$(GREEN)Services started successfully!$(NC)"
 	@echo ""
 	@$(MAKE) -s status
@@ -61,13 +62,12 @@ install-ca: ## Install CA certificate in browser trust stores
 clean: ## Remove all Traefik/CA containers, volumes, and certificates
 	@echo "$(RED)WARNING: This will remove all containers, volumes, and certificates!$(NC)"
 	@echo -n "$(YELLOW)Are you sure? [y/N] $(NC)" && read ans && echo "$$ans" | grep -iq '^y$$'
+	@echo "$(YELLOW)Removing certificates and logs...$(NC)"
+	@docker compose run --rm --no-deps --entrypoint sh traefik \
+		-c 'rm -rf /etc/traefik/acme/* /var/log/traefik/*'
+	@rm -rf certs/*
 	@echo "$(YELLOW)Stopping containers...$(NC)"
 	@docker compose down -v
-	@echo "$(YELLOW)Removing certificates...$(NC)"
-	@rm -rf certs/*
-	@rm -rf traefik/acme/*
-	@echo "$(YELLOW)Removing logs...$(NC)"
-	@rm -rf traefik/logs/*
 	@echo "$(GREEN)Cleanup complete!$(NC)"
 
 check-docker: ## Check if Docker is installed and running

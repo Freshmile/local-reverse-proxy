@@ -72,7 +72,7 @@ make install-ca
 
 Le certificat CA doit être importé **une seule fois** dans votre système pour que tous les services HTTPS soient approuvés.
 
-> **Note:** `make setup` exécute automatiquement `make install-ca`. Cette étape n'est nécessaire manuellement que si vous avez utilisé `make start` au lieu de `make setup`, ou pour réinstaller le certificat (nouveau profil Firefox, nouvelle machine, etc.).
+> **Note:** `make setup` et `make proxy-start` exécutent automatiquement `make install-ca` (idempotent, supprime l'entrée existante avant de réinstaller). Cette étape n'est nécessaire manuellement que pour installer le certificat dans un nouveau profil Firefox ou sur une nouvelle machine.
 
 ### Installation Automatique (Recommandé)
 
@@ -135,8 +135,29 @@ make clean         # Tout supprimer (containers, volumes, certificats)
 make infra-up      # Démarrer les services d'infrastructure
 make infra-down    # Arrêter les services d'infrastructure
 make infra-logs    # Afficher les logs infra en temps réel
+make infra-migrate # Migrer les volumes Docker legacy (pulp/park/devstack) vers freshmile-infra
 make tools-up      # Démarrer les outils optionnels (phpMyAdmin, Mailhog, Kibana)
 make tools-down    # Arrêter les outils optionnels
+```
+
+## Migration des Volumes Legacy
+
+Si vous venez d'une ancienne version du devstack (`pulp_*`, `park_*`, `devstack_*`), un script migre vos volumes existants (`mysql`, `redis`, `elasticsearch`) vers la nouvelle nomenclature `freshmile-infra_<svc>_data` sans perte de données.
+
+```bash
+make infra-down        # Le stack infra doit être arrêté
+make infra-migrate     # Migration interactive
+```
+
+Comportement :
+- Détecte les volumes sources existants par service et demande lequel utiliser si plusieurs sont présents.
+- Demande confirmation avant d'écraser un volume cible non vide.
+- Ne supprime jamais les volumes legacy (montés en lecture seule pendant la copie).
+
+Dry-run pour voir ce qui se passerait sans rien modifier :
+
+```bash
+./scripts/migrate-volumes.sh --dry-run
 ```
 
 ## Ajouter un Nouveau Service
@@ -354,10 +375,10 @@ make setup
 
 ## Informations Techniques
 
-- **Version Traefik:** v3.2
+- **Version Traefik:** v3.6
 - **step-ca:** smallstep/step-ca:latest
 - **Protocole:** ACME avec TLS-ALPN-01 Challenge
-- **Validité des certificats:** Définie par step-ca (par défaut 24h, renouvelés automatiquement)
+- **Validité des certificats:** 24h (défaut step-ca), renouvelés automatiquement par Traefik
 - **Logs d'accès:** `traefik/logs/access.log` (format JSON)
 - **Rechargement automatique:** Les modifications de `traefik/dynamic/*.yml` sont appliquées sans redémarrage
 
