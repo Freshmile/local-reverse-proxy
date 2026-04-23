@@ -1,28 +1,21 @@
-.PHONY: setup proxy-start stop restart logs logs-ca status install-ca clean labels check-docker diagnose
-
-setup: ## Complete setup (start containers, install CA)
-	@echo "$(GREEN)Starting step-ca and Traefik...$(NC)"
-	@$(MAKE) -s check-docker
-	@docker compose up -d
-	@$(MAKE) -s install-ca
-	@echo ""
-	@echo "$(GREEN)Setup complete!$(NC)"
-	@echo "$(YELLOW)Dashboard:$(NC) https://traefik.localhost"
+.PHONY: proxy-start proxy-stop proxy-restart logs logs-ca status install-ca clean labels check-docker diagnose
 
 proxy-start: ## Start Traefik and step-ca containers
 	@echo "$(GREEN)Starting Traefik with step-ca...$(NC)"
 	@$(MAKE) -s check-docker
 	@docker compose up -d
+	@$(MAKE) -s install-ca
 	@echo "$(GREEN)Services started successfully!$(NC)"
 	@echo ""
 	@$(MAKE) -s status
+	@echo "$(YELLOW)Dashboard:$(NC) https://traefik.localhost"
 
-stop: ## Stop Traefik and step-ca containers
+proxy-stop: ## Stop Traefik and step-ca containers
 	@echo "$(YELLOW)Stopping containers...$(NC)"
 	@docker compose down
 	@echo "$(GREEN)Containers stopped$(NC)"
 
-restart: ## Restart Traefik and step-ca containers
+proxy-restart: ## Restart Traefik and step-ca containers
 	@echo "$(YELLOW)Restarting containers...$(NC)"
 	@docker compose restart
 	@echo "$(GREEN)Containers restarted$(NC)"
@@ -61,13 +54,12 @@ install-ca: ## Install CA certificate in browser trust stores
 clean: ## Remove all Traefik/CA containers, volumes, and certificates
 	@echo "$(RED)WARNING: This will remove all containers, volumes, and certificates!$(NC)"
 	@echo -n "$(YELLOW)Are you sure? [y/N] $(NC)" && read ans && echo "$$ans" | grep -iq '^y$$'
+	@echo "$(YELLOW)Removing certificates and logs...$(NC)"
+	@docker compose run --rm --no-deps --entrypoint sh traefik \
+		-c 'rm -rf /etc/traefik/acme/* /var/log/traefik/*'
+	@rm -rf certs/*
 	@echo "$(YELLOW)Stopping containers...$(NC)"
 	@docker compose down -v
-	@echo "$(YELLOW)Removing certificates...$(NC)"
-	@rm -rf certs/*
-	@rm -rf traefik/acme/*
-	@echo "$(YELLOW)Removing logs...$(NC)"
-	@rm -rf traefik/logs/*
 	@echo "$(GREEN)Cleanup complete!$(NC)"
 
 check-docker: ## Check if Docker is installed and running

@@ -39,12 +39,13 @@ Navigateur accepte (CA installée)
 
 ```bash
 # Setup complet en une seule commande
-make setup
+make start
 ```
 
 Cette commande va:
 1. Démarrer step-ca et Traefik (avec dépendance healthcheck)
 2. Extraire et installer le certificat CA automatiquement
+3. Démarrer l'infra globale
 
 Accédez ensuite au dashboard: **https://traefik.localhost**
 
@@ -72,7 +73,7 @@ make install-ca
 
 Le certificat CA doit être importé **une seule fois** dans votre système pour que tous les services HTTPS soient approuvés.
 
-> **Note:** `make setup` exécute automatiquement `make install-ca`. Cette étape n'est nécessaire manuellement que si vous avez utilisé `make start` au lieu de `make setup`, ou pour réinstaller le certificat (nouveau profil Firefox, nouvelle machine, etc.).
+> **Note:** `make proxy-start` exécute automatiquement `make install-ca`. Cette étape n'est nécessaire manuellement que pour installer le certificat dans un nouveau profil Firefox ou sur une nouvelle machine.
 
 ### Installation Automatique (Recommandé)
 
@@ -117,10 +118,9 @@ Import-Certificate -FilePath ".\certs\root_ca.crt" -CertStoreLocation Cert:\Loca
 
 ```bash
 make help          # Afficher l'aide
-make setup         # Setup complet (recommandé pour premier démarrage)
-make start         # Démarrer Traefik et step-ca
-make stop          # Arrêter Traefik et step-ca
-make restart       # Redémarrer Traefik et step-ca
+make proxy-start         # Démarrer Traefik et step-ca
+make proxy-stop          # Arrêter Traefik et step-ca
+make proxy-restart       # Redémarrer Traefik et step-ca
 make logs          # Afficher les logs Traefik en temps réel
 make logs-ca       # Afficher les logs step-ca en temps réel
 make status        # Afficher l'état des services
@@ -135,8 +135,29 @@ make clean         # Tout supprimer (containers, volumes, certificats)
 make infra-up      # Démarrer les services d'infrastructure
 make infra-down    # Arrêter les services d'infrastructure
 make infra-logs    # Afficher les logs infra en temps réel
+make infra-migrate # Migrer les volumes Docker legacy (pulp/park/devstack) vers freshmile-infra
 make tools-up      # Démarrer les outils optionnels (phpMyAdmin, Mailhog, Kibana)
 make tools-down    # Arrêter les outils optionnels
+```
+
+## Migration des Volumes Legacy
+
+Si vous venez d'une ancienne version du devstack (`pulp_*`, `park_*`, `devstack_*`), un script migre vos volumes existants (`mysql`, `redis`, `elasticsearch`) vers la nouvelle nomenclature `freshmile-infra_<svc>_data` sans perte de données.
+
+```bash
+make infra-down        # Le stack infra doit être arrêté
+make infra-migrate     # Migration interactive
+```
+
+Comportement :
+- Détecte les volumes sources existants par service et demande lequel utiliser si plusieurs sont présents.
+- Demande confirmation avant d'écraser un volume cible non vide.
+- Ne supprime jamais les volumes legacy (montés en lecture seule pendant la copie).
+
+Dry-run pour voir ce qui se passerait sans rien modifier :
+
+```bash
+./scripts/migrate-volumes.sh --dry-run
 ```
 
 ## Ajouter un Nouveau Service
@@ -354,10 +375,10 @@ make setup
 
 ## Informations Techniques
 
-- **Version Traefik:** v3.2
+- **Version Traefik:** v3.6
 - **step-ca:** smallstep/step-ca:latest
 - **Protocole:** ACME avec TLS-ALPN-01 Challenge
-- **Validité des certificats:** Définie par step-ca (par défaut 24h, renouvelés automatiquement)
+- **Validité des certificats:** 24h (défaut step-ca), renouvelés automatiquement par Traefik
 - **Logs d'accès:** `traefik/logs/access.log` (format JSON)
 - **Rechargement automatique:** Les modifications de `traefik/dynamic/*.yml` sont appliquées sans redémarrage
 
