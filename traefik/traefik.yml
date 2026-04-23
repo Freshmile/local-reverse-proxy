@@ -10,6 +10,12 @@ entryPoints:
   web:
     address: ":80"
     # Redirect HTTP to HTTPS
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
 
   websecure:
     address: ":443"
